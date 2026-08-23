@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+:root {
+  --background: #070707;
+  --background-secondary: #111111;
+  --foreground: #ffffff;
+  --muted: #a6a6a6;
+  --gold: #c9a227;
+  --gold-accent: #d4af37;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-gold: var(--gold);
+  --color-gold-accent: var(--gold-accent);
+  --font-heading: var(--font-playfair);
+  --font-sans: var(--font-inter);
+  --font-numbers: var(--font-poppins);
+}
+
+html {
+  scroll-behavior: auto;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--gold) 40%, transparent);
+  color: var(--foreground);
+}
