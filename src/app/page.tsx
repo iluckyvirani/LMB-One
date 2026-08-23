@@ -11,6 +11,7 @@ import { TrustStrip } from "@/components/TrustStrip";
 import { PriceBuckets } from "@/components/PriceBuckets";
 import { RecentlyViewedRail } from "@/components/RecentlyViewedRail";
 import { Testimonials } from "@/components/Testimonials";
+import { ProductArt } from "@/components/ProductArt";
 import { NewsletterStrip } from "@/components/NewsletterStrip";
 
 export default function Home() {
@@ -115,19 +116,16 @@ export default function Home() {
               <Link
                 key={p.id}
                 href={`/product/${p.slug}`}
-                className="group block h-full w-[46%] shrink-0 overflow-hidden border border-gold/20 bg-white/[0.03] transition-colors hover:border-gold/50 sm:w-[31%] lg:w-[23%]"
+                className="group block h-full w-[46%] shrink-0 overflow-hidden border border-gold/20 bg-white/[0.03] transition-all hover:border-gold/60 hover:shadow-lg sm:w-[31%] lg:w-[23%]"
               >
-                <div
-                  className="aspect-[4/5]"
-                  style={{
-                    background: `linear-gradient(135deg, ${p.swatch[0]}, ${p.swatch[1]})`,
-                  }}
-                />
+                <div className="aspect-[4/5] w-full overflow-hidden bg-background-secondary">
+                  <ProductArt product={p} className="h-full w-full" />
+                </div>
                 <div className="p-4">
-                  <h3 className="font-heading text-lg text-white group-hover:text-gold">
+                  <h3 className="font-heading text-lg text-white transition-colors group-hover:text-gold">
                     {p.title}
                   </h3>
-                  <p className="mt-1 text-sm text-gold">
+                  <p className="mt-1 text-sm font-semibold text-gold">
                     {Math.round(((p.mrp - p.price) / p.mrp) * 100)}% off
                   </p>
                 </div>

@@ -49,12 +49,20 @@ function OrderListCard({ order }: { order: Order }) {
     >
       <span className="relative h-20 w-20 shrink-0 overflow-hidden border border-white/10 bg-background-secondary">
         {first && (
-          <div
-            className="h-full w-full"
-            style={{
-              background: `linear-gradient(135deg, ${first.swatch[0]}, ${first.swatch[1]})`,
-            }}
-          />
+          first.image ? (
+            <img
+              src={first.image}
+              alt={first.title}
+              className="h-full w-full object-cover object-center"
+            />
+          ) : (
+            <div
+              className="h-full w-full"
+              style={{
+                background: `linear-gradient(135deg, ${first.swatch[0]}, ${first.swatch[1]})`,
+              }}
+            />
+          )
         )}
         {moreCount > 0 && (
           <span className="absolute inset-x-0 bottom-0 bg-background/80 py-0.5 text-center text-[10px] text-gold">
@@ -233,12 +241,22 @@ export function OrderTrack({ orderId, success }: { orderId: string; success?: bo
                   href={`/product/${item.slug}`}
                   className="flex gap-3 border border-white/10 p-3 transition-colors hover:border-gold/40"
                 >
-                  <span
-                    className="h-16 w-16 shrink-0 overflow-hidden"
-                    style={{
-                      background: `linear-gradient(135deg, ${item.swatch[0]}, ${item.swatch[1]})`,
-                    }}
-                  />
+                  <span className="h-16 w-16 shrink-0 overflow-hidden bg-background-secondary">
+                    {item.image ? (
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="h-full w-full object-cover object-center"
+                      />
+                    ) : (
+                      <div
+                        className="h-full w-full"
+                        style={{
+                          background: `linear-gradient(135deg, ${item.swatch[0]}, ${item.swatch[1]})`,
+                        }}
+                      />
+                    )}
+                  </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm text-white hover:text-gold">
                       {item.title}

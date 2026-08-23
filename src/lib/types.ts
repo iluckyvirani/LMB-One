@@ -31,4 +31,7 @@ export type Product = {
   colorHex: string;
   swatch: [string, string];
   description: string;
+  image?: string;
+  images?: string[];
 };
+

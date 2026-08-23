@@ -6,11 +6,13 @@ import type { Product } from "@/lib/types";
 import { discountPercent, formatINR } from "@/lib/format";
 import { ProductArt } from "@/components/ProductArt";
 import { useWishlistStore } from "@/store/wishlist";
+import { useHasHydrated } from "@/lib/useHasHydrated";
 
 export function ProductCard({ product }: { product: Product }) {
   const off = discountPercent(product.price, product.mrp);
   const { toggleWishlist, hasItem } = useWishlistStore();
-  const isWishlisted = hasItem(product.id);
+  const hydrated = useHasHydrated();
+  const isWishlisted = hydrated && hasItem(product.id);
 
   return (
     <div className="group h-full overflow-hidden border border-white/10 bg-white/[0.03] transition-colors hover:border-gold/40">

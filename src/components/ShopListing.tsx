@@ -19,7 +19,7 @@ import {
 import type { Category, Tag } from "@/lib/types";
 import { ProductCard } from "@/components/ProductCard";
 import { FilterSidebar, type FilterState } from "@/components/FilterSidebar";
-import { cn } from "@/lib/utils";
+import { MobileFilterDrawer } from "@/components/MobileFilterDrawer";
 
 const PAGE_SIZE = 8;
 
@@ -182,7 +182,7 @@ export function ShopListing() {
       </div>
 
       <div className="flex flex-col gap-8 lg:flex-row">
-        <div className={cn("lg:block", mobileFiltersOpen ? "block" : "hidden")}>
+        <div className="hidden lg:block">
           <FilterSidebar
             categoryPool={categoryPool}
             state={filters}
@@ -190,6 +190,16 @@ export function ShopListing() {
             onClear={clearFilters}
           />
         </div>
+
+        <MobileFilterDrawer
+          open={mobileFiltersOpen}
+          onClose={() => setMobileFiltersOpen(false)}
+          categoryPool={categoryPool}
+          state={filters}
+          setState={setFilters}
+          onClear={clearFilters}
+          resultCount={sorted.length}
+        />
 
         <div className="flex-1">
           {paged.length === 0 ? (

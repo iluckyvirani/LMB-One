@@ -2,49 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Expand, X } from "lucide-react";
-import { Footprints } from "lucide-react";
+import { Expand, X, Footprints } from "lucide-react";
 import { clsx } from "clsx";
 import type { Product } from "@/lib/types";
 
-const ANGLES = [
-  { rotate: 0, scaleX: 1 },
-  { rotate: 12, scaleX: 1 },
-  { rotate: 0, scaleX: -1 },
-  { rotate: -8, scaleX: 1 },
-];
-
-function Frame({
-  product,
-  angle,
-  className,
-}: {
-  product: Product;
-  angle: (typeof ANGLES)[number];
-  className?: string;
-}) {
-  return (
-    <div
-      className={clsx("flex items-center justify-center", className)}
-      style={{
-        background: `linear-gradient(135deg, ${product.swatch[0]}, ${product.swatch[1]})`,
-      }}
-    >
-      <Footprints
-        className="h-1/4 w-1/4 text-white/70"
-        strokeWidth={1.25}
-        style={{
-          transform: `rotate(${angle.rotate}deg) scaleX(${angle.scaleX})`,
-        }}
-      />
-    </div>
-  );
-}
-
 export function ProductGallery({ product }: { product: Product }) {
+  const galleryList = product.images && product.images.length > 0
+    ? product.images
+    : product.image
+    ? [product.image]
+    : [];
+
+  // Default to 4 frames (using images or fallback)
+  const items = galleryList.length > 0 
+    ? (galleryList.length === 1 ? [galleryList[0], galleryList[0], galleryList[0], galleryList[0]] : galleryList)
+    : [];
+
   const [active, setActive] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [imgError, setImgError] = useState<Record<number, boolean>>({});
 
   useEffect(() => setMounted(true), []);
 
@@ -57,38 +34,75 @@ export function ProductGallery({ product }: { product: Product }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [lightboxOpen]);
 
-  return (
-    <div className="flex gap-3">
-      <div className="flex flex-col gap-3">
-        {ANGLES.map((angle, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => setActive(i)}
-            className={clsx(
-              "h-16 w-14 shrink-0 overflow-hidden border transition-colors sm:h-20 sm:w-16",
-              active === i
-                ? "border-gold"
-                : "border-white/10 hover:border-gold/40",
-            )}
-            aria-label={`View ${i + 1}`}
-          >
-            <Frame product={product} angle={angle} className="h-full w-full" />
-          </button>
-        ))}
-      </div>
+  const activeSrc = items[active] || product.image;
 
-      <div className="relative flex-1 overflow-hidden bg-background-secondary">
-        <Frame
-          product={product}
-          angle={ANGLES[active]}
-          className="aspect-[4/5] h-full w-full"
-        />
+  return (
+    <div className="flex gap-4">
+      {items.length > 0 && (
+        <div className="flex flex-col gap-3">
+          {items.map((src, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setActive(i)}
+              className={clsx(
+                "group relative h-20 w-16 shrink-0 overflow-hidden border bg-background-secondary transition-all sm:h-24 sm:w-20",
+                active === i
+                  ? "border-gold ring-1 ring-gold shadow-md"
+                  : "border-white/10 opacity-70 hover:opacity-100 hover:border-gold/50",
+              )}
+              aria-label={`View angle ${i + 1}`}
+            >
+              {!imgError[i] && src ? (
+                <img
+                  src={src}
+                  alt={`${product.title} view ${i + 1}`}
+                  onError={() => setImgError((prev) => ({ ...prev, [i]: true }))}
+                  className="h-full w-full object-cover object-center"
+                />
+              ) : (
+                <div
+                  className="flex h-full w-full items-center justify-center"
+                  style={{
+                    background: `linear-gradient(135deg, ${product.swatch[0]}, ${product.swatch[1]})`,
+                  }}
+                >
+                  <Footprints className="h-6 w-6 text-white/60" />
+                </div>
+              )}
+              {active === i && (
+                <span className="absolute bottom-0 inset-x-0 h-1 bg-gold" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="relative flex-1 overflow-hidden border border-white/10 bg-background-secondary">
+        {activeSrc && !imgError[active] ? (
+          <img
+            src={activeSrc}
+            alt={product.title}
+            onError={() => setImgError((prev) => ({ ...prev, [active]: true }))}
+            className="aspect-[4/5] h-full w-full object-cover object-center transition-all duration-500"
+          />
+        ) : (
+          <div
+            className="flex aspect-[4/5] h-full w-full flex-col items-center justify-center"
+            style={{
+              background: `linear-gradient(135deg, ${product.swatch[0]}, ${product.swatch[1]})`,
+            }}
+          >
+            <Footprints className="h-16 w-16 text-white/50 mb-3" />
+            <p className="font-heading text-lg text-white/90">{product.title}</p>
+          </div>
+        )}
+
         <button
           type="button"
           onClick={() => setLightboxOpen(true)}
           aria-label="Expand image"
-          className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 text-foreground backdrop-blur hover:text-gold"
+          className="absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-background/80 text-foreground backdrop-blur border border-white/10 transition-transform hover:scale-110 hover:text-gold"
         >
           <Expand className="h-4 w-4" />
         </button>
@@ -98,22 +112,38 @@ export function ProductGallery({ product }: { product: Product }) {
         lightboxOpen &&
         createPortal(
           <div
-            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-6"
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-6 backdrop-blur-sm"
             onClick={() => setLightboxOpen(false)}
           >
             <button
               type="button"
               aria-label="Close"
               onClick={() => setLightboxOpen(false)}
-              className="absolute right-5 top-5 text-muted hover:text-white"
+              className="absolute right-6 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-muted transition-colors hover:bg-white/20 hover:text-white"
             >
               <X className="h-6 w-6" />
             </button>
-            <Frame
-              product={product}
-              angle={ANGLES[active]}
-              className="aspect-[4/5] h-full max-h-[80vh] w-auto max-w-full"
-            />
+            <div
+              className="relative max-h-[85vh] max-w-[90vw] overflow-hidden rounded-lg border border-white/20 bg-background"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {activeSrc && !imgError[active] ? (
+                <img
+                  src={activeSrc}
+                  alt={product.title}
+                  className="max-h-[85vh] w-auto object-contain"
+                />
+              ) : (
+                <div
+                  className="flex h-96 w-96 items-center justify-center"
+                  style={{
+                    background: `linear-gradient(135deg, ${product.swatch[0]}, ${product.swatch[1]})`,
+                  }}
+                >
+                  <Footprints className="h-20 w-20 text-white/70" />
+                </div>
+              )}
+            </div>
           </div>,
           document.body,
         )}

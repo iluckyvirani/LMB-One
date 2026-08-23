@@ -89,11 +89,13 @@ export function FilterSidebar({
   state,
   setState,
   onClear,
+  hideHeader = false,
 }: {
   categoryPool: { category: Category; style: Style; collection: Collection; color: string }[];
   state: FilterState;
   setState: (updater: (s: FilterState) => FilterState) => void;
   onClear: () => void;
+  hideHeader?: boolean;
 }) {
   const bounds = getPriceBounds();
   const colors = getAllColors();
@@ -121,11 +123,24 @@ export function FilterSidebar({
 
   return (
     <aside className="w-full lg:w-64 lg:shrink-0">
-      <div className="flex items-center justify-between pb-4">
-        <h2 className="text-sm font-semibold tracking-widest text-foreground uppercase">
-          Filters
-        </h2>
-        {!!hasActiveFilters && (
+      {!hideHeader && (
+        <div className="flex items-center justify-between pb-4">
+          <h2 className="text-sm font-semibold tracking-widest text-foreground uppercase">
+            Filters
+          </h2>
+          {!!hasActiveFilters && (
+            <button
+              type="button"
+              onClick={onClear}
+              className="text-xs text-gold hover:underline"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+      )}
+      {hideHeader && !!hasActiveFilters && (
+        <div className="flex justify-end pb-2">
           <button
             type="button"
             onClick={onClear}
@@ -133,8 +148,8 @@ export function FilterSidebar({
           >
             Clear all
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       <Section title="Shop For">
         {CATEGORIES.map((c) => (

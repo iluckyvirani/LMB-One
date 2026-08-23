@@ -7,6 +7,7 @@ import type { Product } from "@/lib/types";
 import { useCartStore } from "@/store/cart";
 import { useWishlistStore } from "@/store/wishlist";
 import { SizeChartModal } from "@/components/SizeChartModal";
+import { useHasHydrated } from "@/lib/useHasHydrated";
 
 export function AddToCartButton({ product }: { product: Product }) {
   const [size, setSize] = useState<number | null>(null);
@@ -14,7 +15,8 @@ export function AddToCartButton({ product }: { product: Product }) {
   const [chartOpen, setChartOpen] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
   const { toggleWishlist, hasItem } = useWishlistStore();
-  const isWishlisted = hasItem(product.id);
+  const hydrated = useHasHydrated();
+  const isWishlisted = hydrated && hasItem(product.id);
 
   return (
     <div className="space-y-4">

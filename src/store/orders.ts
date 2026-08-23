@@ -13,6 +13,7 @@ export type OrderItem = {
   qty: number;
   size: number;
   swatch: [string, string];
+  image?: string;
 };
 
 export type Order = {
@@ -53,6 +54,7 @@ export const useOrderStore = create<OrderState>()(
           qty: i.qty,
           size: i.size,
           swatch: i.product.swatch,
+          image: i.product.image,
         }));
         const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
         const shipping = 0;
