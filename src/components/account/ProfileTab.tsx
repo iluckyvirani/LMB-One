@@ -15,6 +15,8 @@ export function ProfileTab() {
   const [mobile, setMobile] = useState("");
   const [editing, setEditing] = useState<"profile" | "email" | "phone" | null>(null);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     setFirstName(profile?.firstName ?? name?.split(/\s+/)[0] ?? "");
@@ -26,22 +28,31 @@ export function ProfileTab() {
   const inputClass =
     "w-full border border-white/15 bg-background px-3 py-2.5 text-sm outline-none focus:border-gold disabled:opacity-60";
 
-  function saveProfile() {
-    updateProfile({
-      firstName: firstName.trim() || "LMB",
-      lastName: lastName.trim(),
-      email: email.trim(),
-      phone: mobile.replace(/\D/g, "").slice(0, 10) || phone || undefined,
-    });
-    setEditing(null);
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), 2000);
+  async function saveProfile() {
+    setSaving(true);
+    setError("");
+    try {
+      await updateProfile({
+        firstName: firstName.trim() || "LMB",
+        lastName: lastName.trim(),
+        email: email.trim(),
+        phone: mobile.replace(/\D/g, "").slice(0, 10) || phone || undefined,
+      });
+      setEditing(null);
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 2000);
+    } catch {
+      setError("Could not save changes. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <div>
       <h1 className="font-heading text-3xl text-white">Profile Information</h1>
       {saved && <p className="mt-3 text-sm text-gold">Profile saved successfully.</p>}
+      {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
 
       <section className="mt-8">
         <div className="flex items-center justify-between gap-3">
@@ -75,10 +86,11 @@ export function ProfileTab() {
         {editing === "profile" && (
           <button
             type="button"
+            disabled={saving}
             onClick={saveProfile}
-            className="mt-4 rounded-full bg-gold px-6 py-2.5 text-sm font-medium text-background hover:bg-gold-accent"
+            className="mt-4 rounded-full bg-gold px-6 py-2.5 text-sm font-medium text-background hover:bg-gold-accent disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Save
+            {saving ? "Saving…" : "Save"}
           </button>
         )}
       </section>
@@ -107,10 +119,11 @@ export function ProfileTab() {
         {editing === "email" && (
           <button
             type="button"
+            disabled={saving}
             onClick={saveProfile}
-            className="mt-4 rounded-full bg-gold px-6 py-2.5 text-sm font-medium text-background hover:bg-gold-accent"
+            className="mt-4 rounded-full bg-gold px-6 py-2.5 text-sm font-medium text-background hover:bg-gold-accent disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Save
+            {saving ? "Saving…" : "Save"}
           </button>
         )}
       </section>
@@ -138,10 +151,11 @@ export function ProfileTab() {
         {editing === "phone" && (
           <button
             type="button"
+            disabled={saving}
             onClick={saveProfile}
-            className="mt-4 rounded-full bg-gold px-6 py-2.5 text-sm font-medium text-background hover:bg-gold-accent"
+            className="mt-4 rounded-full bg-gold px-6 py-2.5 text-sm font-medium text-background hover:bg-gold-accent disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Save
+            {saving ? "Saving…" : "Save"}
           </button>
         )}
       </section>

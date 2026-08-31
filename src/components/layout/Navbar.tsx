@@ -20,7 +20,10 @@ import { BRAND, NAV_LINKS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useCartStore, cartCount } from "@/store/cart";
 import { useWishlistStore } from "@/store/wishlist";
+import { useRecentlyViewedStore } from "@/store/recentlyViewed";
 import { shortDisplayName, useAuthStore } from "@/store/auth";
+import { useOrderStore } from "@/store/orders";
+import { useSettingsStore } from "@/store/settings";
 import { useHasHydrated } from "@/lib/useHasHydrated";
 import { LoginModal } from "@/components/LoginModal";
 
@@ -150,6 +153,12 @@ export function Navbar() {
   const wishlistItems = useWishlistStore((s) => s.items);
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const logout = useAuthStore((s) => s.logout);
+  const fetchAddresses = useAuthStore((s) => s.fetchAddresses);
+  const fetchOrders = useOrderStore((s) => s.fetchOrders);
+  const syncWishlist = useWishlistStore((s) => s.syncLocalToServer);
+  const syncCart = useCartStore((s) => s.syncWithServer);
+  const syncRecentlyViewed = useRecentlyViewedStore((s) => s.syncWithServer);
+  const fetchSettings = useSettingsStore((s) => s.fetchSettings);
   const count = hydrated ? cartCount(cartItems) : 0;
   const wishCount = hydrated ? wishlistItems.length : 0;
 
@@ -157,6 +166,36 @@ export function Navbar() {
     setMobileOpen(false);
     setAccountOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    fetchSettings().catch(console.error);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated || !isLoggedIn) return;
+    fetchAddresses().catch(console.error);
+    fetchOrders().catch(console.error);
+    syncWishlist().catch(console.error);
+    syncCart().catch(console.error);
+    syncRecentlyViewed().catch(console.error);
+  }, [
+    hydrated,
+    isLoggedIn,
+    fetchAddresses,
+    fetchOrders,
+    syncWishlist,
+    syncCart,
+    syncRecentlyViewed,
+  ]);
+
+  useEffect(() => {
+    function onUnauthorized() {
+      logout();
+    }
+    window.addEventListener("lmb:unauthorized", onUnauthorized);
+    return () => window.removeEventListener("lmb:unauthorized", onUnauthorized);
+  }, [logout]);
 
   function onSearch(e: React.FormEvent) {
     e.preventDefault();

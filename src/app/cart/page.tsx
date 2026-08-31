@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Minus, Plus, Trash2 } from "lucide-react";
@@ -10,6 +10,7 @@ import { formatINR } from "@/lib/format";
 import { ProductArt } from "@/components/ProductArt";
 import { useAuthStore, type SavedAddress } from "@/store/auth";
 import { useOrderStore } from "@/store/orders";
+import { useSettingsStore, computeShipping } from "@/store/settings";
 import { LoginModal } from "@/components/LoginModal";
 import { AddressFormModal } from "@/components/account/AddressFormModal";
 import { cn } from "@/lib/utils";
@@ -27,23 +28,40 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const addresses = useAuthStore((s) => s.addresses);
   const defaultAddressId = useAuthStore((s) => s.defaultAddressId);
   const placeOrder = useOrderStore((s) => s.placeOrder);
+  const settings = useSettingsStore((s) => s.settings);
   const subtotal = cartSubtotal(items);
+  const shipping = computeShipping(subtotal, settings);
+  const total = subtotal + shipping;
+  const codEligible = settings.codEnabled && total <= settings.codMaxAmount;
 
   const [selectedId, setSelectedId] = useState<string | null>(defaultAddressId);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<SavedAddress | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<string>("cod");
+  const [paymentMethod, setPaymentMethod] = useState<string>(
+    settings.codEnabled ? "cod" : "upi",
+  );
   const [placing, setPlacing] = useState(false);
+  const [error, setError] = useState("");
 
   const selectedAddress = addresses.find((a) => a.id === selectedId) ?? null;
 
-  function submit(e: React.FormEvent) {
+  useEffect(() => {
+    if (paymentMethod === "cod" && !codEligible) setPaymentMethod("upi");
+  }, [paymentMethod, codEligible]);
+
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedAddress) return;
+    if (!selectedAddress || placing) return;
     setPlacing(true);
-    const order = placeOrder(items, selectedAddress, paymentMethod);
-    clear();
-    router.push(`/orders/${order.id}?success=1`);
+    setError("");
+    try {
+      const order = await placeOrder(items, selectedAddress, paymentMethod);
+      await clear();
+      router.push(`/orders/${order.id}?success=1`);
+    } catch {
+      setError("Could not place your order. Please try again.");
+      setPlacing(false);
+    }
   }
 
   return (
@@ -130,22 +148,40 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
               Payment Method
             </h2>
             <div className="space-y-2">
-              {PAYMENT_METHODS.map((m) => (
-                <label
-                  key={m.id}
-                  className="flex cursor-pointer items-center gap-3 border border-white/10 px-4 py-3 text-sm text-foreground hover:border-gold/40"
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    checked={paymentMethod === m.id}
-                    onChange={() => setPaymentMethod(m.id)}
-                    className="accent-[var(--gold)]"
-                  />
-                  {m.label}
-                </label>
-              ))}
+              {PAYMENT_METHODS.map((m) => {
+                const disabled = m.id === "cod" && !codEligible;
+                return (
+                  <label
+                    key={m.id}
+                    className={cn(
+                      "flex cursor-pointer items-center gap-3 border border-white/10 px-4 py-3 text-sm text-foreground hover:border-gold/40",
+                      disabled && "cursor-not-allowed opacity-40 hover:border-white/10",
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="payment"
+                      disabled={disabled}
+                      checked={paymentMethod === m.id}
+                      onChange={() => setPaymentMethod(m.id)}
+                      className="accent-[var(--gold)]"
+                    />
+                    {m.label}
+                  </label>
+                );
+              })}
             </div>
+            {!settings.codEnabled && (
+              <p className="mt-3 text-xs text-muted">
+                Cash on Delivery is currently unavailable.
+              </p>
+            )}
+            {settings.codEnabled && !codEligible && (
+              <p className="mt-3 text-xs text-muted">
+                Cash on Delivery isn&apos;t available for orders above{" "}
+                {formatINR(settings.codMaxAmount)}.
+              </p>
+            )}
             <p className="mt-3 text-xs text-muted">
               This is a mock checkout — no payment is processed.
             </p>
@@ -160,12 +196,16 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
           </div>
           <div className="flex justify-between text-sm text-muted">
             <span>Shipping</span>
-            <span className="text-foreground">Free</span>
+            <span className="text-foreground">
+              {shipping === 0 ? "Free" : formatINR(shipping)}
+            </span>
           </div>
           <div className="flex justify-between border-t border-white/10 pt-4 font-[family-name:var(--font-poppins)] text-lg">
             <span className="text-foreground">Total</span>
-            <span className="text-gold">{formatINR(subtotal)}</span>
+            <span className="text-gold">{formatINR(total)}</span>
           </div>
+          {error && <p className="text-sm text-red-400">{error}</p>}
+
           <button
             type="submit"
             disabled={!selectedAddress || placing}
@@ -192,6 +232,7 @@ export default function CartPage() {
   const removeItem = useCartStore((s) => s.removeItem);
   const hydrated = useHasHydrated();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const settings = useSettingsStore((s) => s.settings);
   const [step, setStep] = useState<"cart" | "checkout">("cart");
   const [loginOpen, setLoginOpen] = useState(false);
 
@@ -219,6 +260,8 @@ export default function CartPage() {
   }
 
   const subtotal = cartSubtotal(items);
+  const shipping = computeShipping(subtotal, settings);
+  const total = subtotal + shipping;
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
@@ -299,11 +342,13 @@ export default function CartPage() {
           </div>
           <div className="flex justify-between text-sm text-muted">
             <span>Shipping</span>
-            <span className="text-foreground">Free</span>
+            <span className="text-foreground">
+              {shipping === 0 ? "Free" : formatINR(shipping)}
+            </span>
           </div>
           <div className="flex justify-between border-t border-white/10 pt-4 font-[family-name:var(--font-poppins)] text-lg">
             <span className="text-foreground">Total</span>
-            <span className="text-gold">{formatINR(subtotal)}</span>
+            <span className="text-gold">{formatINR(total)}</span>
           </div>
           <button
             onClick={() => (isLoggedIn ? setStep("checkout") : setLoginOpen(true))}

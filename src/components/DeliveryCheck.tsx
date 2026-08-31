@@ -2,18 +2,45 @@
 
 import { useState } from "react";
 import { Truck } from "lucide-react";
+import { useSettingsStore } from "@/store/settings";
+import { api, ApiError } from "@/lib/api";
 
 export function DeliveryCheck() {
+  const settings = useSettingsStore((s) => s.settings);
   const [pincode, setPincode] = useState("");
   const [result, setResult] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
 
-  function check() {
+  async function check() {
     if (!/^\d{6}$/.test(pincode)) {
       setResult("Enter a valid 6-digit pincode");
       return;
     }
-    const days = 3 + (Number(pincode) % 4);
-    setResult(`Delivery by ${days} days · Cash on Delivery available`);
+    setChecking(true);
+    setResult(null);
+    try {
+      const data = await api.get<
+        { serviceable: true; city: string; state: string } | { serviceable: false }
+      >(`/delivery/check?pincode=${pincode}`);
+
+      if (!data.serviceable) {
+        setResult("We couldn't find that pincode. Please double-check and try again.");
+        return;
+      }
+
+      const eta =
+        settings.deliveryEtaMinDays === settings.deliveryEtaMaxDays
+          ? `${settings.deliveryEtaMinDays} days`
+          : `${settings.deliveryEtaMinDays}-${settings.deliveryEtaMaxDays} days`;
+      const codNote = settings.codEnabled ? " · Cash on Delivery available" : "";
+      setResult(`Delivering to ${data.city}, ${data.state} by ${eta}${codNote}`);
+    } catch (err) {
+      setResult(
+        err instanceof ApiError ? err.message : "Could not verify pincode right now.",
+      );
+    } finally {
+      setChecking(false);
+    }
   }
 
   return (
@@ -36,9 +63,10 @@ export function DeliveryCheck() {
         <button
           type="button"
           onClick={check}
-          className="shrink-0 border border-gold/50 px-4 py-2 text-sm text-gold hover:bg-gold/10"
+          disabled={checking}
+          className="shrink-0 border border-gold/50 px-4 py-2 text-sm text-gold hover:bg-gold/10 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Check
+          {checking ? "Checking…" : "Check"}
         </button>
       </div>
       {result && <p className="mt-2 text-sm text-muted">{result}</p>}

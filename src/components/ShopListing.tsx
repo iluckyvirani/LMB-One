@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 import { SlidersHorizontal, ChevronLeft, ChevronRight, ChevronsLeft } from "lucide-react";
 import {
   CATEGORIES,
-  PRODUCTS,
   SORT_OPTIONS,
   filterProducts,
   getAllSizes,
@@ -16,15 +15,15 @@ import {
   sortProducts,
   type SortValue,
 } from "@/lib/products";
-import type { Category, Tag } from "@/lib/types";
+import type { Category, Product, Tag } from "@/lib/types";
 import { ProductCard } from "@/components/ProductCard";
 import { FilterSidebar, type FilterState } from "@/components/FilterSidebar";
 import { MobileFilterDrawer } from "@/components/MobileFilterDrawer";
 
 const PAGE_SIZE = 8;
 
-function emptyFilters(): FilterState {
-  const bounds = getPriceBounds();
+function emptyFilters(products: Product[]): FilterState {
+  const bounds = getPriceBounds(products);
   return {
     categories: [],
     styles: [],
@@ -43,25 +42,25 @@ const TAG_LABELS: Record<Tag, string> = {
   "daily-wear": "Daily Wear",
 };
 
-export function ShopListing() {
+export function ShopListing({ products }: { products: Product[] }) {
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get("category") as Category | null;
   const tagParam = searchParams.get("tag") as Tag | null;
   const query = searchParams.get("q") ?? "";
   const paramsKey = searchParams.toString();
-  const allSizes = getAllSizes();
+  const allSizes = getAllSizes(products);
 
-  const [filters, setFilters] = useState<FilterState>(emptyFilters);
+  const [filters, setFilters] = useState<FilterState>(() => emptyFilters(products));
   const [sort, setSort] = useState<SortValue>("recommended");
   const [page, setPage] = useState(1);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   useEffect(() => {
-    const bounds = getPriceBounds();
+    const bounds = getPriceBounds(products);
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");
     setFilters({
-      ...emptyFilters(),
+      ...emptyFilters(products),
       categories: categoryParam ? [categoryParam] : [],
       priceRange: [
         minPrice ? Math.max(bounds.min, Number(minPrice)) : bounds.min,
@@ -78,10 +77,10 @@ export function ShopListing() {
 
   // Base pool: search results, a tagged rail's deep-link, or the full catalog.
   const pool = query
-    ? searchProducts(query)
+    ? searchProducts(products, query)
     : tagParam
-      ? getProductsByTag(tagParam)
-      : PRODUCTS;
+      ? getProductsByTag(products, tagParam)
+      : products;
   const categoryPool = filterProducts(pool, { categories: filters.categories });
   const filtered = filterProducts(pool, filters);
   const sorted = sortProducts(filtered, sort);
@@ -104,7 +103,7 @@ export function ShopListing() {
         : "All Shoes";
 
   function clearFilters() {
-    setFilters(emptyFilters());
+    setFilters(emptyFilters(products));
   }
 
   return (
@@ -184,6 +183,7 @@ export function ShopListing() {
       <div className="flex flex-col gap-8 lg:flex-row">
         <div className="hidden lg:block">
           <FilterSidebar
+            products={products}
             categoryPool={categoryPool}
             state={filters}
             setState={setFilters}
@@ -194,6 +194,7 @@ export function ShopListing() {
         <MobileFilterDrawer
           open={mobileFiltersOpen}
           onClose={() => setMobileFiltersOpen(false)}
+          products={products}
           categoryPool={categoryPool}
           state={filters}
           setState={setFilters}

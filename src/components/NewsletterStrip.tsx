@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useSettingsStore } from "@/store/settings";
 
 export function NewsletterStrip() {
+  const settings = useSettingsStore((s) => s.settings);
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -10,11 +12,9 @@ export function NewsletterStrip() {
     <section className="border-t border-white/10 bg-background-secondary/40 px-6 py-14 text-center">
       <p className="text-xs uppercase tracking-[0.3em] text-gold">Stay in the loop</p>
       <h2 className="mt-2 font-heading text-2xl text-foreground sm:text-3xl">
-        Get 10% off your first order
+        {settings.newsletterHeading}
       </h2>
-      <p className="mt-2 text-sm text-muted">
-        Sign up for drops, restocks and members-only offers.
-      </p>
+      <p className="mt-2 text-sm text-muted">{settings.newsletterSubtext}</p>
       <form
         onSubmit={(e) => {
           e.preventDefault();

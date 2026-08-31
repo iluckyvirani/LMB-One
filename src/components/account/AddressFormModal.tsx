@@ -29,6 +29,8 @@ export function AddressFormModal({
   const upsertAddress = useAuthStore((s) => s.upsertAddress);
   const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState<UserAddress>(EMPTY);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => setMounted(true), []);
 
@@ -63,12 +65,20 @@ export function AddressFormModal({
   const inputClass =
     "w-full border border-white/15 bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:border-gold placeholder:text-muted";
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmit) return;
-    const id = upsertAddress(editing ? { ...form, id: editing.id } : form);
-    onSaved?.(id);
-    onClose();
+    if (!canSubmit || saving) return;
+    setSaving(true);
+    setError("");
+    try {
+      const id = await upsertAddress(editing ? { ...form, id: editing.id } : form);
+      onSaved?.(id);
+      onClose();
+    } catch {
+      setError("Could not save this address. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return createPortal(
@@ -174,12 +184,14 @@ export function AddressFormModal({
             </div>
           </div>
 
+          {error && <p className="text-sm text-red-400">{error}</p>}
+
           <button
             type="submit"
-            disabled={!canSubmit}
+            disabled={!canSubmit || saving}
             className="w-full rounded-full bg-gold px-8 py-3 font-medium text-background transition-colors hover:bg-gold-accent disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {editing ? "Save Address" : "Add Address"}
+            {saving ? "Saving…" : editing ? "Save Address" : "Add Address"}
           </button>
         </form>
       </div>

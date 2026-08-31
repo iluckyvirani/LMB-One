@@ -11,7 +11,7 @@ import {
   getAllColors,
   getPriceBounds,
 } from "@/lib/products";
-import type { Category, Collection, Style } from "@/lib/types";
+import type { Category, Collection, Product, Style } from "@/lib/types";
 import { PriceRangeSlider } from "@/components/PriceRangeSlider";
 
 function Section({
@@ -85,20 +85,22 @@ export type FilterState = {
 };
 
 export function FilterSidebar({
+  products,
   categoryPool,
   state,
   setState,
   onClear,
   hideHeader = false,
 }: {
+  products: Product[];
   categoryPool: { category: Category; style: Style; collection: Collection; color: string }[];
   state: FilterState;
   setState: (updater: (s: FilterState) => FilterState) => void;
   onClear: () => void;
   hideHeader?: boolean;
 }) {
-  const bounds = getPriceBounds();
-  const colors = getAllColors();
+  const bounds = getPriceBounds(products);
+  const colors = getAllColors(products);
 
   function toggle<K extends keyof FilterState>(key: K, value: FilterState[K] extends (infer U)[] ? U : never) {
     setState((s) => {

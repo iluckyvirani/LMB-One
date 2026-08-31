@@ -1,10 +1,12 @@
 import Link from "next/link";
 import {
   CATEGORIES,
+  fetchAllProducts,
   getOffers,
   getProductsByCategory,
   getProductsByTag,
 } from "@/lib/products";
+import { fetchBanners } from "@/lib/content";
 import { BannerCarousel } from "@/components/BannerCarousel";
 import { ProductRail } from "@/components/ProductRail";
 import { TrustStrip } from "@/components/TrustStrip";
@@ -14,20 +16,22 @@ import { Testimonials } from "@/components/Testimonials";
 import { ProductArt } from "@/components/ProductArt";
 import { NewsletterStrip } from "@/components/NewsletterStrip";
 
-export default function Home() {
-  const men = getProductsByCategory("men").slice(0, 4);
-  const women = getProductsByCategory("women").slice(0, 4);
-  const kids = getProductsByCategory("kids").slice(0, 4);
-  const sports = getProductsByCategory("sports").slice(0, 4);
-  const newArrivals = getProductsByTag("new-arrival", 4);
-  const bestSellers = getProductsByTag("bestseller", 4);
-  const partyWear = getProductsByTag("party-wear", 4);
-  const dailyWear = getProductsByTag("daily-wear", 4);
-  const offers = getOffers(20, 4);
+export default async function Home() {
+  const products = await fetchAllProducts();
+  const banners = await fetchBanners();
+  const men = getProductsByCategory(products, "men").slice(0, 4);
+  const women = getProductsByCategory(products, "women").slice(0, 4);
+  const kids = getProductsByCategory(products, "kids").slice(0, 4);
+  const sports = getProductsByCategory(products, "sports").slice(0, 4);
+  const newArrivals = getProductsByTag(products, "new-arrival", 4);
+  const bestSellers = getProductsByTag(products, "bestseller", 4);
+  const partyWear = getProductsByTag(products, "party-wear", 4);
+  const dailyWear = getProductsByTag(products, "daily-wear", 4);
+  const offers = getOffers(products, 20, 4);
 
   return (
     <div className="flex flex-col">
-      <BannerCarousel />
+      <BannerCarousel banners={banners} />
 
       <TrustStrip />
 

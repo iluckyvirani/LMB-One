@@ -17,6 +17,7 @@ export function LoginModal({ open, onClose, onSuccess }: Props) {
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const [demoCode, setDemoCode] = useState("");
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -28,6 +29,7 @@ export function LoginModal({ open, onClose, onSuccess }: Props) {
       setStep("phone");
       setPhone("");
       setOtp("");
+      setDemoCode("");
       setError("");
     }
   }, [open]);
@@ -57,19 +59,25 @@ export function LoginModal({ open, onClose, onSuccess }: Props) {
     }
     setError("");
     setSending(true);
-    await requestOtpApi(cleaned);
+    const result = await requestOtpApi(cleaned);
     setSending(false);
+    if (result.ok && result.demoCode) {
+      setDemoCode(result.demoCode);
+      setOtp(result.demoCode);
+    }
     setStep("otp");
   }
 
-  function verifyOtp(e: React.FormEvent) {
+  async function verifyOtp(e: React.FormEvent) {
     e.preventDefault();
     const cleaned = phone.replace(/\D/g, "");
     if (!isValidOtp(otp)) {
-      setError("Enter the 6-digit OTP (demo: 123456)");
+      setError("Enter the 6-digit OTP sent to your phone");
       return;
     }
-    const result = verifyOtpApi(cleaned, otp.trim());
+    setSending(true);
+    const result = await verifyOtpApi(cleaned, otp.trim());
+    setSending(false);
     if (!result.ok) {
       setError(result.error);
       return;
@@ -109,9 +117,16 @@ export function LoginModal({ open, onClose, onSuccess }: Props) {
           <p className="mt-1 text-sm text-muted">
             {step === "phone"
               ? "We'll send a one-time password to verify you."
-              : `OTP sent to +91 ${phone.replace(/\D/g, "")} (demo OTP: 123456)`}
+              : `OTP sent to +91 ${phone.replace(/\D/g, "")}`}
           </p>
         </div>
+
+        {step === "otp" && demoCode && (
+          <p className="border-b border-white/10 bg-white/[0.04] px-6 py-3 text-center text-sm text-muted">
+            Demo mode — no SMS is actually sent. Your code is{" "}
+            <span className="font-medium tracking-[0.2em] text-gold">{demoCode}</span>
+          </p>
+        )}
 
         {step === "phone" ? (
           <form onSubmit={requestOtp} className="space-y-4 px-6 py-6">

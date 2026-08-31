@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { UserAddress } from "@/store/auth";
 import type { CartItem } from "@/store/cart";
+import { api } from "@/lib/api";
 
 export type OrderItem = {
   productId: string;
@@ -27,47 +28,93 @@ export type Order = {
   paymentMethod: string;
 };
 
+type ServerOrder = {
+  id: string;
+  createdAt: string;
+  customerName: string;
+  customerPhone: string;
+  address: string;
+  city: string;
+  state: string;
+  pincode: string;
+  paymentMethod: string;
+  items: {
+    productId: string;
+    slug: string;
+    title: string;
+    price: number;
+    qty: number;
+    size: number;
+    swatch: [string, string];
+    image?: string;
+  }[];
+  subtotal: number;
+  shipping: number;
+  total: number;
+};
+
+function mapServerOrder(o: ServerOrder): Order {
+  return {
+    id: o.id,
+    createdAt: o.createdAt,
+    items: o.items.map((i) => ({
+      productId: i.productId,
+      slug: i.slug,
+      title: i.title,
+      price: i.price,
+      qty: i.qty,
+      size: i.size,
+      swatch: i.swatch,
+      image: i.image,
+    })),
+    subtotal: o.subtotal,
+    shipping: o.shipping,
+    total: o.total,
+    paymentMethod: o.paymentMethod,
+    address: {
+      fullName: o.customerName,
+      phone: o.customerPhone,
+      addressLine1: o.address,
+      city: o.city,
+      state: o.state,
+      pincode: o.pincode,
+      label: "Home",
+    },
+  };
+}
+
 type OrderState = {
   orders: Order[];
+  fetchOrders: () => Promise<void>;
   placeOrder: (
     items: CartItem[],
     address: UserAddress,
     paymentMethod: string,
-  ) => Order;
+  ) => Promise<Order>;
 };
-
-function newOrderId() {
-  const n = Math.floor(1_000_000 + Math.random() * 8_999_999);
-  return `LMB-${n}`;
-}
 
 export const useOrderStore = create<OrderState>()(
   persist(
     (set, get) => ({
       orders: [],
-      placeOrder: (cartItems, address, paymentMethod) => {
-        const items: OrderItem[] = cartItems.map((i) => ({
-          productId: i.product.id,
-          slug: i.product.slug,
-          title: i.product.title,
-          price: i.product.price,
-          qty: i.qty,
-          size: i.size,
-          swatch: i.product.swatch,
-          image: i.product.image,
-        }));
-        const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
-        const shipping = 0;
-        const order: Order = {
-          id: newOrderId(),
-          createdAt: new Date().toISOString(),
-          items,
-          subtotal,
-          shipping,
-          total: subtotal + shipping,
+
+      fetchOrders: async () => {
+        const orders = await api.get<ServerOrder[]>("/customer/orders");
+        set({ orders: orders.map(mapServerOrder) });
+      },
+
+      placeOrder: async (cartItems, address, paymentMethod) => {
+        const payload = {
+          items: cartItems.map((i) => ({
+            productId: i.product.id,
+            size: i.size,
+            qty: i.qty,
+          })),
           address,
           paymentMethod,
         };
+        const created = await api.post<ServerOrder>("/orders", payload);
+        const order = mapServerOrder(created);
         set({ orders: [order, ...get().orders] });
         return order;
       },

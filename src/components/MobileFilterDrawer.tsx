@@ -4,13 +4,14 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { FilterSidebar, type FilterState } from "@/components/FilterSidebar";
-import type { Category, Collection, Style } from "@/lib/types";
+import type { Category, Collection, Product, Style } from "@/lib/types";
 import { useHasHydrated } from "@/lib/useHasHydrated";
 import { cn } from "@/lib/utils";
 
 export function MobileFilterDrawer({
   open,
   onClose,
+  products,
   categoryPool,
   state,
   setState,
@@ -19,6 +20,7 @@ export function MobileFilterDrawer({
 }: {
   open: boolean;
   onClose: () => void;
+  products: Product[];
   categoryPool: { category: Category; style: Style; collection: Collection; color: string }[];
   state: FilterState;
   setState: (updater: (s: FilterState) => FilterState) => void;
@@ -78,6 +80,7 @@ export function MobileFilterDrawer({
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
           <FilterSidebar
+            products={products}
             categoryPool={categoryPool}
             state={state}
             setState={setState}

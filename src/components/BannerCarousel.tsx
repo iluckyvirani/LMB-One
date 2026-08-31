@@ -4,83 +4,28 @@ import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight, Sparkles, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Banner } from "@/lib/content";
 
-const BANNERS = [
-  {
-    id: 1,
-    href: "/shop?tag=new-arrival",
-    image: "/banners/hero-luxury-oxford.jpg",
-    swatch: ["#1a1a1a", "#3a3a3a"] as const,
-    badge: "Heritage Collection",
-    eyebrow: "New Arrivals 2026",
-    title: "Handcrafted Luxury Leather, Made For The Modern Connoisseur",
-    subtitle: "Artisanal silhouettes cut from full-grain calfskin — special introductory prices.",
-    cta: "Explore Collection",
-  },
-  {
-    id: 2,
-    href: "/shop?tag=party-wear",
-    image: "/banners/hero-party-heels.jpg",
-    swatch: ["#5c1a2b", "#c9a227"] as const,
-    badge: "The Gala Édition",
-    eyebrow: "Party & Evening Wear",
-    title: "Velvet Elegance & Gilded Heels For The Grand Night",
-    subtitle: "Turn heads with handcrafted stilettos, smoking loafers & embellished party sandals.",
-    cta: "Shop Evening Edit",
-  },
-  {
-    id: 3,
-    href: "/shop?category=sports",
-    image: "/banners/hero-sports-runner.jpg",
-    swatch: ["#103524", "#0df2c9"] as const,
-    badge: "Performance Lab",
-    eyebrow: "Limitless Momentum",
-    title: "CloudStep & Nitro Series — Engineered For Speed",
-    subtitle: "Ultra-responsive dynamic cushioning and breathable mesh for effortless strides.",
-    cta: "Discover Sports",
-  },
-  {
-    id: 4,
-    href: "/shop?category=kids",
-    image: "/banners/hero-kids-sneakers.jpg",
-    swatch: ["#3f6fb0", "#e0556a"] as const,
-    badge: "Little Feet",
-    eyebrow: "Youth & Toddlers",
-    title: "Playful Steps & Bold Cushioning For Young Explorers",
-    subtitle: "Durable, featherlight, and non-slip trainers designed for active all-day fun.",
-    cta: "Shop Kids Collection",
-  },
-  {
-    id: 5,
-    href: "/shop",
-    image: "/banners/hero-season-sale.jpg",
-    swatch: ["#2d1b0e", "#c9a227"] as const,
-    badge: "Limited Season Event",
-    eyebrow: "Artisan Craftsmanship",
-    title: "Flat 25% Off Iconic Goodyear-Welted Footwear",
-    subtitle: "Unmatched durability meets timeless British & Italian bespoke craftsmanship.",
-    cta: "Claim Your Discount",
-  },
-];
-
-export function BannerCarousel() {
+export function BannerCarousel({ banners: BANNERS }: { banners: Banner[] }) {
   const [index, setIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [imgError, setImgError] = useState<Record<number, boolean>>({});
 
   const nextSlide = useCallback(() => {
     setIndex((i) => (i + 1) % BANNERS.length);
-  }, []);
+  }, [BANNERS.length]);
 
   const prevSlide = useCallback(() => {
     setIndex((i) => (i - 1 + BANNERS.length) % BANNERS.length);
-  }, []);
+  }, [BANNERS.length]);
 
   useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || BANNERS.length < 2) return;
     const id = window.setInterval(nextSlide, 5000);
     return () => window.clearInterval(id);
-  }, [isPaused, nextSlide]);
+  }, [isPaused, nextSlide, BANNERS.length]);
+
+  if (BANNERS.length === 0) return null;
 
   return (
     <section 
@@ -106,7 +51,7 @@ export function BannerCarousel() {
                 aria-hidden={!isActive}
               >
                 {/* Background Image / Gradient */}
-                {hasImg ? (
+                {hasImg && banner.image ? (
                   <img
                     src={banner.image}
                     alt={banner.title}

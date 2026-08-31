@@ -1,10 +1,12 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { ShopListing } from "@/components/ShopListing";
+import { fetchAllProducts } from "@/lib/products";
 
 export const metadata: Metadata = { title: "Shop" };
 
-export default function ShopPage() {
+export default async function ShopPage() {
+  const products = await fetchAllProducts();
   return (
     <Suspense
       fallback={
@@ -13,7 +15,7 @@ export default function ShopPage() {
         </div>
       }
     >
-      <ShopListing />
+      <ShopListing products={products} />
     </Suspense>
   );
 }

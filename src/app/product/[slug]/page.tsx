@@ -4,11 +4,13 @@ import Link from "next/link";
 import { Star } from "lucide-react";
 import {
   CATEGORIES,
-  PRODUCTS,
   STYLES,
-  getProductBySlug,
+  fetchAllProducts,
+  fetchProductBySlug,
   getRelatedProducts,
 } from "@/lib/products";
+import { fetchProductReviews } from "@/lib/reviews";
+import { fetchBankOffers } from "@/lib/content";
 import { discountPercent, formatINR } from "@/lib/format";
 import { ProductGallery } from "@/components/ProductGallery";
 import { ProductCard } from "@/components/ProductCard";
@@ -21,29 +23,28 @@ import { RecordView } from "@/components/RecordView";
 
 type Props = { params: Promise<{ slug: string }> };
 
-export function generateStaticParams() {
-  return PRODUCTS.map((p) => ({ slug: p.slug }));
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await fetchProductBySlug(slug);
   return { title: product?.title ?? "Product" };
 }
 
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await fetchProductBySlug(slug);
   if (!product) notFound();
 
-  const related = getRelatedProducts(product);
+  const allProducts = await fetchAllProducts();
+  const related = getRelatedProducts(allProducts, product);
+  const reviewsData = await fetchProductReviews(product.id);
+  const bankOffers = await fetchBankOffers();
   const off = discountPercent(product.price, product.mrp);
   const categoryLabel = CATEGORIES.find((c) => c.value === product.category)?.label;
   const styleLabel = STYLES.find((s) => s.value === product.style)?.label;
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
-      <RecordView productId={product.id} />
+      <RecordView product={product} />
 
       <nav className="mb-6 flex flex-wrap items-center gap-x-2 text-xs text-muted">
         <Link href="/" className="hover:text-gold">
@@ -114,14 +115,14 @@ export default async function ProductPage({ params }: Props) {
           </div>
 
           <div className="border-t border-white/10 pt-6">
-            <BankOffers />
+            <BankOffers offers={bankOffers} />
           </div>
         </div>
       </div>
 
       <ProductSpecs product={product} />
 
-      <ProductReviewsSection product={product} />
+      <ProductReviewsSection product={product} reviewsData={reviewsData} />
 
       {related.length > 0 && (
         <section className="mt-16 border-t border-white/10 pt-10">
