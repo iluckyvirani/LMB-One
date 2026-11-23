@@ -26,6 +26,8 @@ import { useOrderStore } from "@/store/orders";
 import { useSettingsStore } from "@/store/settings";
 import { useHasHydrated } from "@/lib/useHasHydrated";
 import { LoginModal } from "@/components/LoginModal";
+import { CartDrawer } from "@/components/CartDrawer";
+import { MobileMenuDrawer } from "@/components/layout/MobileMenuDrawer";
 
 const ACCOUNT_ITEMS = [
   { href: "/account", label: "My Profile", Icon: User },
@@ -146,6 +148,7 @@ export function Navbar() {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [query, setQuery] = useState("");
   const hydrated = useHasHydrated();
 
@@ -165,7 +168,23 @@ export function Navbar() {
   useEffect(() => {
     setMobileOpen(false);
     setAccountOpen(false);
+    setCartDrawerOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    function onOpenCart() {
+      setCartDrawerOpen(true);
+    }
+    function onOpenMenu() {
+      setMobileOpen(true);
+    }
+    window.addEventListener("lmb:open-cart", onOpenCart);
+    window.addEventListener("lmb:open-menu", onOpenMenu);
+    return () => {
+      window.removeEventListener("lmb:open-cart", onOpenCart);
+      window.removeEventListener("lmb:open-menu", onOpenMenu);
+    };
+  }, []);
 
   useEffect(() => {
     fetchSettings().catch(console.error);
@@ -204,14 +223,25 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-background/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
-        <Link href="/" className="flex shrink-0 items-center gap-3">
+    <>
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-background/90 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 sm:gap-4 px-3 sm:px-6">
+        {/* Android Material Left Hamburger button */}
+        <button
+          type="button"
+          aria-label="Open navigation menu"
+          className="flex h-10 w-10 shrink-0 items-center justify-center text-foreground hover:text-gold transition-colors active:scale-90 lg:hidden"
+          onClick={() => setMobileOpen(true)}
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
+        <Link href="/" className="flex shrink-0 items-center gap-2.5 sm:gap-3">
           <Image
             src="/logo.jpg"
             alt={`${BRAND.storeName} logo`}
-            width={36}
-            height={36}
+            width={34}
+            height={34}
             className="rounded-full"
           />
           <span className="font-heading text-lg tracking-tight text-foreground">
@@ -269,8 +299,9 @@ export function Navbar() {
             )}
           </Link>
 
-          <Link
-            href="/cart"
+          <button
+            type="button"
+            onClick={() => setCartDrawerOpen(true)}
             className="relative flex items-center gap-1.5 text-sm text-foreground/90 hover:text-gold"
           >
             <ShoppingBag className="h-4 w-4" />
@@ -280,104 +311,38 @@ export function Navbar() {
                 {count}
               </span>
             )}
-          </Link>
+          </button>
         </div>
 
-        <div className="ml-auto flex items-center gap-2 lg:hidden">
-          <Link
-            href="/cart"
-            className="relative flex h-10 w-10 items-center justify-center text-foreground"
+        {/* Mobile Right Action Icons (Search & Bag only, no hamburger on the right) */}
+        <div className="ml-auto flex items-center gap-1 sm:gap-2 lg:hidden">
+          <button
+            type="button"
+            aria-label="Search shoes"
+            className="flex h-10 w-10 items-center justify-center text-foreground hover:text-gold transition-colors active:scale-95"
+            onClick={() => setMobileOpen(true)}
+          >
+            <Search className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setCartDrawerOpen(true)}
+            className="relative flex h-10 w-10 items-center justify-center text-foreground hover:text-gold transition-colors active:scale-95"
             aria-label="Cart"
           >
             <ShoppingBag className="h-5 w-5" />
             {count > 0 && (
-              <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[10px] text-background">
+              <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[10px] text-background font-bold">
                 {count}
               </span>
             )}
-          </Link>
-          <button
-            type="button"
-            aria-label="Toggle menu"
-            className="flex h-10 w-10 items-center justify-center text-foreground"
-            onClick={() => setMobileOpen((v) => !v)}
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
-
-      {mobileOpen && (
-        <div className="border-t border-white/10 bg-background/98 backdrop-blur-xl lg:hidden">
-          <form onSubmit={onSearch} className="border-b border-white/10 px-4 py-3">
-            <div className="relative">
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search for shoes"
-                className="w-full border border-white/10 bg-white/[0.04] py-2.5 pl-3 pr-10 text-sm outline-none focus:border-gold/50"
-              />
-              <button
-                type="submit"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gold"
-                aria-label="Search"
-              >
-                <Search className="h-4 w-4" />
-              </button>
-            </div>
-          </form>
-          <div className="flex flex-col px-2 py-2">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="flex items-center gap-3 px-3 py-3 text-sm hover:text-gold"
-              >
-                {link.label}
-              </Link>
-            ))}
-            <div className="my-2 border-t border-white/10" />
-            {hydrated && isLoggedIn ? (
-              <>
-                {ACCOUNT_ITEMS.map(({ href, label, Icon }) => (
-                  <Link
-                    key={label}
-                    href={href}
-                    className="flex items-center gap-3 px-3 py-3 text-sm hover:text-gold"
-                  >
-                    <Icon className="h-4 w-4 text-gold" /> {label}
-                  </Link>
-                ))}
-                <button
-                  type="button"
-                  onClick={logout}
-                  className="flex items-center gap-3 px-3 py-3 text-left text-sm hover:text-gold"
-                >
-                  <LogOut className="h-4 w-4 text-gold" /> Logout
-                </button>
-              </>
-            ) : (
-              <MobileLoginTrigger />
-            )}
-          </div>
-        </div>
-      )}
     </header>
-  );
-}
 
-function MobileLoginTrigger() {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-3 px-3 py-3 text-left text-sm hover:text-gold"
-      >
-        <User className="h-4 w-4 text-gold" /> Login
-      </button>
-      <LoginModal open={open} onClose={() => setOpen(false)} />
-    </>
+    <MobileMenuDrawer open={mobileOpen} onClose={() => setMobileOpen(false)} />
+    <CartDrawer open={cartDrawerOpen} onClose={() => setCartDrawerOpen(false)} />
+  </>
   );
 }

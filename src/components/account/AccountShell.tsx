@@ -54,21 +54,67 @@ export function AccountShell({
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
-      <nav className="mb-6 text-xs text-muted">
+    <div className="mx-auto w-full max-w-6xl px-3 sm:px-6 py-5 sm:py-10">
+      <nav className="mb-4 sm:mb-6 text-xs text-muted flex items-center flex-wrap gap-1">
         <Link href="/" className="hover:text-gold">
           Home
         </Link>
-        <span className="mx-2">/</span>
+        <span className="mx-1">/</span>
         <Link href="/account" className="hover:text-gold">
           My Account
         </Link>
-        <span className="mx-2">/</span>
+        <span className="mx-1">/</span>
         <span className="text-foreground/80">{breadcrumbLabel}</span>
       </nav>
 
+      {/* Mobile Compact User Strip */}
+      <div className="lg:hidden mb-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-gold/40 bg-gold/10 text-gold font-bold">
+            <User className="h-5 w-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-wider text-muted">Account</p>
+            <p className="font-heading text-base font-semibold text-white truncate">
+              {name || "Customer"}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={logout}
+          className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-1.5 text-xs text-muted hover:text-red-400 active:scale-95 transition-colors shrink-0"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          Logout
+        </button>
+      </div>
+
+      {/* Mobile Horizontal Segmented Tab Pills */}
+      <div className="lg:hidden mb-5 -mx-3 sm:-mx-6 px-3 sm:px-6 overflow-x-auto no-scrollbar flex items-center gap-2 pb-1">
+        {NAV.map(({ id, href, label, Icon }) => {
+          const active = id === activeTab;
+          return (
+            <Link
+              key={id}
+              href={href}
+              className={cn(
+                "flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium transition-all active:scale-95 shrink-0",
+                active
+                  ? "bg-gold text-background font-semibold shadow-md"
+                  : "border border-white/15 bg-white/[0.03] text-muted hover:text-white"
+              )}
+            >
+              <Icon className={cn("h-3.5 w-3.5", active ? "text-background" : "text-gold")} />
+              {label}
+            </Link>
+          );
+        })}
+      </div>
+
       <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
-        <aside className="h-fit border border-white/10 bg-white/[0.02] p-5">
+        {/* Desktop Sidebar (hidden on mobile) */}
+        <aside className="hidden lg:block h-fit border border-white/10 bg-white/[0.02] p-5">
           <div className="flex items-center gap-3 border-b border-white/10 pb-4">
             <span className="flex h-12 w-12 items-center justify-center rounded-full border border-gold/40 bg-gold/10 text-gold">
               <User className="h-6 w-6" />
@@ -120,7 +166,7 @@ export function AccountShell({
           </nav>
         </aside>
 
-        <div className="min-w-0 border border-white/10 bg-white/[0.02] p-6 sm:p-8">
+        <div className="min-w-0 rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-6 lg:p-8">
           {children}
         </div>
       </div>

@@ -45,22 +45,22 @@ export function ProductCard({ product }: { product: Product }) {
         </button>
       </div>
       <Link href={`/product/${product.slug}`} className="block">
-        <div className="space-y-2 p-4">
-          <p className="text-xs tracking-widest text-gold/80 uppercase">
+        <div className="space-y-1.5 p-3 sm:p-4">
+          <p className="text-[10px] sm:text-xs tracking-widest text-gold/80 uppercase truncate">
             {product.colorway}
           </p>
-          <h3 className="font-heading text-lg leading-snug text-white transition-colors group-hover:text-gold">
+          <h3 className="font-heading text-sm sm:text-base md:text-lg leading-snug text-white transition-colors group-hover:text-gold line-clamp-1 sm:line-clamp-2">
             {product.title}
           </h3>
-          <div className="flex items-baseline gap-2 font-[family-name:var(--font-poppins)]">
-            <span className="text-gold">{formatINR(product.price)}</span>
+          <div className="flex items-baseline gap-1.5 sm:gap-2 font-[family-name:var(--font-poppins)] flex-wrap">
+            <span className="text-sm sm:text-base font-semibold text-gold">{formatINR(product.price)}</span>
             {product.mrp > product.price && (
-              <span className="text-sm text-muted line-through">
+              <span className="text-xs text-muted line-through">
                 {formatINR(product.mrp)}
               </span>
             )}
           </div>
-          <p className="text-xs text-muted">
+          <p className="text-[11px] text-muted">
             ★ {product.rating} · {product.reviewsCount} reviews
           </p>
         </div>

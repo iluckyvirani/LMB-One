@@ -25,6 +25,7 @@ export type Product = {
   mrp: number;
   rating: number;
   reviewsCount: number;
+  stock: number;
   sizes: number[];
   colorway: string;
   color: string;

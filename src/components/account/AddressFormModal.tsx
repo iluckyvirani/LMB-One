@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useAuthStore, type AddressLabel, type SavedAddress, type UserAddress } from "@/store/auth";
+import { api } from "@/lib/api";
 
 const EMPTY: UserAddress = {
   fullName: "",
@@ -53,6 +54,27 @@ export function AddressFormModal({
   }, [open, onClose]);
 
   if (!open || !mounted) return null;
+
+  async function handlePincodeChange(pin: string) {
+    const cleaned = pin.replace(/\D/g, "").slice(0, 6);
+    setForm((prev) => ({ ...prev, pincode: cleaned }));
+    if (cleaned.length === 6) {
+      try {
+        const res = await api.get<{ serviceable: boolean; city?: string; state?: string }>(
+          `/delivery/check?pincode=${cleaned}`,
+        );
+        if (res.serviceable && res.city && res.state) {
+          setForm((prev) => ({
+            ...prev,
+            city: res.city || prev.city,
+            state: res.state || prev.state,
+          }));
+        }
+      } catch {
+        // fallback to manual entry
+      }
+    }
+  }
 
   const canSubmit =
     form.fullName.trim() &&
@@ -153,11 +175,9 @@ export function AddressFormModal({
             <input
               required
               inputMode="numeric"
-              placeholder="Pincode"
+              placeholder="Pincode (Auto-fills City & State)"
               value={form.pincode}
-              onChange={(e) =>
-                setForm({ ...form, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) })
-              }
+              onChange={(e) => handlePincodeChange(e.target.value)}
               className={inputClass}
             />
           </div>

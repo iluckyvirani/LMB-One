@@ -13,10 +13,8 @@ export function ProductGallery({ product }: { product: Product }) {
     ? [product.image]
     : [];
 
-  // Default to 4 frames (using images or fallback)
-  const items = galleryList.length > 0 
-    ? (galleryList.length === 1 ? [galleryList[0], galleryList[0], galleryList[0], galleryList[0]] : galleryList)
-    : [];
+  // Unique non-empty image URLs without artificial duplicates
+  const items = Array.from(new Set(galleryList.filter(Boolean)));
 
   const [active, setActive] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -38,7 +36,7 @@ export function ProductGallery({ product }: { product: Product }) {
 
   return (
     <div className="flex gap-4">
-      {items.length > 0 && (
+      {items.length > 1 && (
         <div className="flex flex-col gap-3">
           {items.map((src, i) => (
             <button
